@@ -60,6 +60,7 @@ Commands are always the second case. A project whose `openspec/config.yaml` name
 | [openspec-verify-change](#openspec-verify-change) | Check the implementation matches the plan | Optional |
 | [openspec-bulk-archive-change](#openspec-bulk-archive-change) | Archive several change proposals at once | Optional |
 | [openspec-onboard](#openspec-onboard) | Learn the workflow by doing one real change proposal end to end | Optional |
+| [openspec-tree-maintain](#openspec-tree-maintain) | Turn one tree governance instruction into a restructure change | Optional |
 
 Each entry below names the skill that owns the next step. When your profile leaves that skill out, the installed files never name it: the handoff becomes the equivalent `openspec` command, or a plain request to you, and a line that exists only to point at a missing skill is not written at all. So the skills you have always hand off to skills you have. Which set you get is [Profiles](../customize/profiles.md).
 
@@ -183,3 +184,13 @@ Learn the workflow by doing one real change proposal end to end.
 | **Arguments** | None. It scans your codebase for small starter tasks and asks you to pick one or describe your own. |
 | **Creates** | A real change proposal for the chosen task, one artifact at a time, then real code once you confirm implementation. Archives the change proposal at the end. |
 | **Response** | A narrated walkthrough of the full cycle with pauses for your input: explore, create, build each artifact, implement, archive. Ends with a recap and a pointer to `openspec-propose`. Takes about 15 to 20 minutes. |
+
+## openspec-tree-maintain
+
+Turn one tree governance instruction into a restructure change. It stops when `tree.enabled: true` is not set; see [Tree governance](configuration/tree-governance.md).
+
+| Contract | Description |
+|---|---|
+| **Arguments** | An optional subtree to scope `openspec tree instructions`. It takes one instruction at a time. |
+| **Creates** | `openspec/changes/<name>/` with `restructure: true`, a `restructure.yaml` using only the instruction's allowed operations, and for a REVIEW a MODIFIED delta for each kept requirement. Never code. |
+| **Response** | The `openspec tree plan` output and a strict validation result, then it stops for your approval. It never archives. |

@@ -1,6 +1,6 @@
 {
-  "name": "@fission-ai/openspec",
-  "version": "1.14.3",
+  "name": "@rainchan/openspec",
+  "version": "1.14.3-tree.1",
   "description": "AI-native system for spec-driven development",
   "keywords": [
     "openspec",
@@ -9,10 +9,10 @@
     "ai",
     "development"
   ],
-  "homepage": "https://github.com/Fission-AI/OpenSpec",
+  "homepage": "https://github.com/mzdluo123/OpenSpec",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Fission-AI/OpenSpec"
+    "url": "https://github.com/mzdluo123/OpenSpec"
   },
   "license": "MIT",
   "author": "OpenSpec Contributors",

@@ -109,6 +109,12 @@ In both branches, never create the root as a side effect: do not run `openspec i
       - A blocked change is never synced or moved: show it as `Blocked` in the step 6 table, leave it out of conflict resolution (resolve its conflicts using only the other changes), and record it as Failed in step 8d
       - Checking here, before any main spec is written, matches `openspec archive`: a collision found after sync would leave main specs rewritten for an archive that never happened
 
+   **Tree governance (only when `openspec/config.yaml` sets `tree.enabled: true`):**
+   - Exclude restructure changes (`restructure: true` in `.openspec.yaml`) from the batch; they are archived one at a time with the single-change archive workflow after `openspec tree plan` review.
+   - For each selected change, run `openspec validate "<name>" --json` and mark it blocked when it reports `CHANGE_STALE_PATH` or `CHANGE_DRIFT`. Show the code in the status table. Resolve stale paths with `openspec tree rebase "<name>"`; drift needs the author's merge and a per-requirement `openspec tree pin "<name>" --accept "<capability>#<requirement>"`, so skip drifted changes in this batch.
+   - Archive each change with `openspec archive "<name>" --yes --json` instead of syncing and moving it by hand, so the CLI enforces drift and stale paths when it writes the specs.
+   - After each archive, validate the remaining batch again: an earlier archive can make a later change drift. Skip any change that now reports `CHANGE_DRIFT` and list it in the summary.
+
 4. **Detect spec conflicts**
 
    Build a map keyed by `<capability-path>`, the exact path relative to `specs/`:
@@ -348,6 +354,7 @@ No active changes found. Create a new change to get started.
 
 **Guardrails**
 - Allow any number of changes (1+ is fine, 2+ is the typical use case)
+- Under tree governance (`tree.enabled: true`), archive only through `openspec archive`; never move a restructure change by hand and never `--accept` drift you did not merge
 - Always prompt for selection, never auto-select
 - Detect spec conflicts early and resolve by checking codebase
 - When both changes are implemented, apply specs in chronological order

@@ -141,6 +141,7 @@ the page or rewriting the goal in both places, never letting them drift.
 | [Configuration › CLI settings (config.json)](reference/configuration/config-json.md) | Every field of config.json: how the openspec CLI behaves on your machine. |
 | [Configuration › Environment variables](reference/configuration/environment-variables.md) | Every environment variable OpenSpec reads. |
 | [Configuration › Stores](reference/configuration/stores.md) | The files behind multi-repo stores: registry.yaml and store.yaml, and which root a command uses. |
+| [Configuration › Tree governance](reference/configuration/tree-governance.md) | The tree: config section, restructure.yaml, bases.yaml, tree-redirects.yaml, the openspec tree commands, and their rule codes. |
 | [Supported tools](reference/supported-tools.md) | Which AI coding tools OpenSpec supports, and each one's command syntax. |
 | [Glossary](reference/glossary.md) | Every OpenSpec term, one line each. |
 | [Architecture](reference/architecture/index.md) (held back from the site until drafted) | How OPSX is built: internals for the curious. |

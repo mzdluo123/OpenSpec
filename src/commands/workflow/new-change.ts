@@ -23,6 +23,9 @@ import {
   isStoreSelectedRoot,
 } from '../../core/root-selection.js';
 import { printJson, statusFromError, validateSchemaExists } from './shared.js';
+import { promises as fs } from 'fs';
+import { readEnabledTreeConfig } from '../../core/tree/context.js';
+import { EMPTY_MANIFEST, manifestPath } from '../../core/tree/manifest.js';
 
 // -----------------------------------------------------------------------------
 // Types
@@ -37,6 +40,7 @@ export interface NewChangeOptions {
   initiative?: string;
   areas?: string;
   json?: boolean;
+  restructure?: boolean;
 }
 
 interface NewChangeOutput {
@@ -138,6 +142,14 @@ export async function newChangeCommand(name: string | undefined, options: NewCha
 
     const projectRoot = root.path;
 
+    if (options.restructure && (isStoreSelectedRoot(root) || !readEnabledTreeConfig(projectRoot))) {
+      throw new RootSelectionError(
+        '--restructure needs tree governance: set `tree.enabled: true` in openspec/config.yaml (openspec tree migrate init).',
+        'TREE_NOT_ENABLED',
+        { target: 'change.options', fix: 'openspec tree migrate init' }
+      );
+    }
+
     // Validate schema if provided
     if (options.schema) {
       validateSchemaExists(options.schema, projectRoot);
@@ -154,12 +166,16 @@ export async function newChangeCommand(name: string | undefined, options: NewCha
       changesDir: root.changesDir,
       metadata: {
         ...(options.goal ? { goal: options.goal } : {}),
+        ...(options.restructure ? { restructure: true } : {}),
       },
     });
 
+    if (options.restructure) {
+      await fs.writeFile(manifestPath(result.changeDir), EMPTY_MANIFEST, 'utf-8');
+    }
+
     // If description provided, create README.md with description
     if (options.description) {
-      const { promises: fs } = await import('fs');
       const readmePath = path.join(result.changeDir, 'README.md');
       await fs.writeFile(readmePath, `# ${name}\n\n${options.description}\n`, 'utf-8');
     }

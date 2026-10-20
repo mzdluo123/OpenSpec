@@ -3,7 +3,15 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import { Command } from 'commander';
+import { createRequire } from 'node:module';
 import { runCLI } from '../helpers/run-cli.js';
+
+// The suite pins upstream telemetry behaviour; the fork gate is covered in distribution.test.ts.
+vi.mock('../../src/telemetry/distribution.js', () => ({
+  UPSTREAM_PACKAGE_NAME: '@fission-ai/openspec',
+  isUpstreamDistribution: () => true,
+}));
+
 
 /**
  * A global config file with a typo is still the user's file. Reads fall back
@@ -381,6 +389,8 @@ describe('an unparseable global config', () => {
 
     expect(read()).toBe(TYPO);
     // Telemetry and the command each read the config; the warning prints once.
-    expect(result.stderr.match(/Invalid JSON/g)).toHaveLength(1);
+    // A redistributed fork never reaches telemetry's read, so nothing reads it.
+    const { name } = createRequire(import.meta.url)('../../package.json') as { name: string };
+    expect(result.stderr.match(/Invalid JSON/g) ?? []).toHaveLength(name === '@fission-ai/openspec' ? 1 : 0);
   }, 120_000);
 });

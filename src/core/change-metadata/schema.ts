@@ -29,6 +29,8 @@ export const CHANGE_METADATA_KNOWN_KEYS = [
   'initiative',
   'skip_specs',
   'retire_capabilities',
+  'placement',
+  'restructure',
 ] as const;
 
 export type ChangeMetadataKnownKey = (typeof CHANGE_METADATA_KNOWN_KEYS)[number];
@@ -59,6 +61,23 @@ export const ChangeMetadataSchema = z.object({
   // tree - only from git - so it is the author's call, not an inference from the
   // shape of a delta.
   retire_capabilities: z.boolean().optional(),
+  // Tree governance (fork): where each ADDED requirement was placed and which
+  // neighbouring capabilities were read before deciding, checked by
+  // CHANGE_PLACEMENT_MISSING when `tree.enabled` is set.
+  placement: z
+    .array(
+      z.object({
+        requirement: z.string().min(1),
+        capability: z.string().min(1),
+        decision: z.enum(['existing-capability', 'new-capability', 'new-parent']),
+        reviewed: z.array(z.string().min(1)).min(1),
+        rationale: z.string().min(1),
+      })
+    )
+    .optional(),
+  // Tree governance (fork): a restructure change only moves, splits, merges or
+  // deduplicates through restructure.yaml.
+  restructure: z.boolean().optional(),
 });
 
 export type ChangeMetadata = z.infer<typeof ChangeMetadataSchema>;

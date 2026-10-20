@@ -12,6 +12,7 @@ import { registerStoreCommand } from './commands/store.js';
 import { registerDoctorCommand } from './commands/doctor.js';
 import { registerContextCommand } from './commands/context.js';
 import { registerWorksetCommand } from './commands/workset.js';
+import { registerTreeCommand } from './commands/tree.js';
 import { DEFAULT_SCHEMA } from '../commands/workflow/default-schema.js';
 import type {
   StatusOptions,
@@ -580,6 +581,7 @@ registerStoreCommand(program);
 registerDoctorCommand(program);
 registerContextCommand(program);
 registerWorksetCommand(program);
+registerTreeCommand(program);
 
 // Top-level validate command
 program
@@ -825,6 +827,7 @@ newCmd
   .option('--description <text>', 'Description to add to README.md')
   .option('--goal <text>', 'Optional goal metadata to store with the change')
   .option('--schema <name>', `Workflow schema to use (default: ${DEFAULT_SCHEMA})`)
+  .option('--restructure', 'Create a tree restructure change (restructure.yaml manifest; requires tree governance)')
   .option('--json', 'Output as JSON')
   .option('--store <id>', STORE_OPTION_DESCRIPTION)
   .addOption(hiddenStorePathOption())

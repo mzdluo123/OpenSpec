@@ -8,6 +8,7 @@ import type { SkillTemplate, CommandTemplate } from '../types.js';
 import { optionalWorkflow } from '../optional-workflow.js';
 import { STORE_SELECTION_GUIDANCE } from './store-selection.js';
 import { PROJECT_ROOT_GUARD } from './project-root.js';
+import { treeGovernanceGuidance } from './tree-governance.js';
 
 /**
  * The planning-complete handoff. Neither `apply` nor `archive` is guaranteed
@@ -111,6 +112,7 @@ ${PROJECT_ROOT_GUARD}
      - Otherwise, write it yourself:
        - Use \`template\` as the structure - fill in its sections
        - Apply \`context\` and \`rules\` as constraints when writing - but do NOT copy them into the file
+${treeGovernanceGuidance('       ')}
        - Write the file to that output path
      - Either way, verify the artifact file exists at that output path
    - Show what was created and what's now unlocked
@@ -237,6 +239,7 @@ ${PROJECT_ROOT_GUARD}
      - Otherwise, write it yourself:
        - Use \`template\` as the structure - fill in its sections
        - Apply \`context\` and \`rules\` as constraints when writing - but do NOT copy them into the file
+${treeGovernanceGuidance('       ')}
        - Write the file to that output path
      - Either way, verify the artifact file exists at that output path
    - Show what was created and what's now unlocked

@@ -6,6 +6,7 @@
  */
 import type { SkillTemplate, CommandTemplate } from '../types.js';
 import { optionalWorkflow } from '../optional-workflow.js';
+import { TREE_ARCHIVE_GUARDRAIL, TREE_BULK_ARCHIVE_GATE } from './tree-governance.js';
 import { STORE_SELECTION_GUIDANCE } from './store-selection.js';
 import { PROJECT_ROOT_GUARD } from './project-root.js';
 
@@ -122,6 +123,8 @@ ${PROJECT_ROOT_GUARD}
       - If it exists, or another selected change resolves to the same target name, mark every such change \`Blocked\` with \`Archive directory already exists\`
       - A blocked change is never synced or moved: show it as \`Blocked\` in the step 6 table, leave it out of conflict resolution (resolve its conflicts using only the other changes), and record it as Failed in step 8d
       - Checking here, before any main spec is written, matches \`openspec archive\`: a collision found after sync would leave main specs rewritten for an archive that never happened
+
+   ${TREE_BULK_ARCHIVE_GATE}
 
 4. **Detect spec conflicts**
 
@@ -362,6 +365,7 @@ No active changes found. Create a new change to get started.
 
 **Guardrails**
 - Allow any number of changes (1+ is fine, 2+ is the typical use case)
+${TREE_ARCHIVE_GUARDRAIL}
 - Always prompt for selection, never auto-select
 - Detect spec conflicts early and resolve by checking codebase
 - When both changes are implemented, apply specs in chronological order
@@ -490,6 +494,8 @@ ${PROJECT_ROOT_GUARD}
       - If it exists, or another selected change resolves to the same target name, mark every such change \`Blocked\` with \`Archive directory already exists\`
       - A blocked change is never synced or moved: show it as \`Blocked\` in the step 6 table, leave it out of conflict resolution (resolve its conflicts using only the other changes), and record it as Failed in step 8d
       - Checking here, before any main spec is written, matches \`openspec archive\`: a collision found after sync would leave main specs rewritten for an archive that never happened
+
+   ${TREE_BULK_ARCHIVE_GATE}
 
 4. **Detect spec conflicts**
 
@@ -730,6 +736,7 @@ No active changes found. Create a new change to get started.
 
 **Guardrails**
 - Allow any number of changes (1+ is fine, 2+ is the typical use case)
+${TREE_ARCHIVE_GUARDRAIL}
 - Always prompt for selection, never auto-select
 - Detect spec conflicts early and resolve by checking codebase
 - When both changes are implemented, apply specs in chronological order

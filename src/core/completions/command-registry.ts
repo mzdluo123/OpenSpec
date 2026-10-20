@@ -298,8 +298,112 @@ export const COMMAND_REGISTRY: CommandDefinition[] = [
             description: 'Workflow schema to use',
             takesValue: true,
           },
+          {
+            name: 'restructure',
+            description: 'Create a tree restructure change (restructure.yaml manifest)',
+          },
           COMMON_FLAGS.json,
           COMMON_FLAGS.store,
+        ],
+      },
+    ],
+  },
+  {
+    name: 'tree',
+    description: 'Tree-structured spec governance',
+    flags: [],
+    subcommands: [
+      {
+        name: 'check',
+        description: 'Check structural tree rules',
+        flags: [
+          { name: 'scope', description: 'Only report nodes inside this subtree', takesValue: true, completionType: 'spec-id' },
+          COMMON_FLAGS.json,
+        ],
+      },
+      {
+        name: 'instructions',
+        description: 'Turn findings into structured instructions for an agent',
+        flags: [
+          { name: 'scope', description: 'Only instructions for nodes inside this subtree', takesValue: true, completionType: 'spec-id' },
+          { name: 'op', description: 'Only this instruction kind', takesValue: true, values: ['SPLIT', 'MERGE', 'REVIEW', 'PLACE', 'PRUNE'] },
+          COMMON_FLAGS.json,
+        ],
+      },
+      {
+        name: 'context',
+        description: 'Show a node with its neighbours and the in-flight changes touching them',
+        acceptsPositional: true,
+        positionals: [{ name: 'capability-path', type: 'spec-id' }],
+        flags: [COMMON_FLAGS.json],
+      },
+      {
+        name: 'overlap',
+        description: 'List requirements changed by more than one in-flight change',
+        flags: [COMMON_FLAGS.json],
+      },
+      {
+        name: 'plan',
+        description: 'Show the file operations of a restructure change without writing',
+        acceptsPositional: true,
+        positionals: [{ name: 'change', type: 'change-id' }],
+        flags: [COMMON_FLAGS.json],
+      },
+      {
+        name: 'pin',
+        description: 'Record base snapshots of the requirements a change rewrites',
+        acceptsPositional: true,
+        positionals: [{ name: 'change', type: 'change-id', optional: true }],
+        flags: [
+          { name: 'all', description: 'Pin every in-flight change' },
+          { name: 'from', description: 'Where base text comes from', takesValue: true, values: ['worktree', 'merge-base'] },
+          { name: 'base', description: 'Base branch for --from merge-base', takesValue: true },
+          { name: 'accept', description: 'Accept the current text of one drifted requirement', takesValue: true },
+          COMMON_FLAGS.json,
+        ],
+      },
+      {
+        name: 'drift',
+        description: 'Compare base snapshots with the working tree and the base branch',
+        acceptsPositional: true,
+        positionals: [{ name: 'change', type: 'change-id', optional: true }],
+        flags: [
+          { name: 'base', description: 'Base branch for the remote check', takesValue: true },
+          COMMON_FLAGS.json,
+        ],
+      },
+      {
+        name: 'rebase',
+        description: 'Rewrite delta paths and bases through tree-redirects.yaml',
+        acceptsPositional: true,
+        positionals: [{ name: 'change', type: 'change-id' }],
+        flags: [{ name: 'dry-run', description: 'Show what would move without writing' }, COMMON_FLAGS.json],
+      },
+      {
+        name: 'migrate',
+        description: 'Move a project to tree governance in phases',
+        flags: [],
+        subcommands: [
+          { name: 'status', description: 'Show the current migration phase', flags: [COMMON_FLAGS.json] },
+          {
+            name: 'init',
+            description: 'Write the tree config section and governance files',
+            flags: [{ name: 'base', description: 'Record tree.drift.baseRef', takesValue: true }, COMMON_FLAGS.json],
+          },
+          {
+            name: 'plan',
+            description: 'List the tasks and instructions of a migration phase',
+            flags: [{ name: 'phase', description: 'Phase 0-5', takesValue: true }, COMMON_FLAGS.json],
+          },
+          {
+            name: 'import-redirects',
+            description: 'Import capability redirects from git renames',
+            flags: [
+              { name: 'from-git', description: 'Commit range to scan', takesValue: true },
+              { name: 'yes', short: 'y', description: 'Append without confirmation' },
+              COMMON_FLAGS.json,
+            ],
+          },
         ],
       },
     ],

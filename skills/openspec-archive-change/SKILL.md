@@ -107,6 +107,23 @@ In both branches, never create the root as a side effect: do not run `openspec i
 
    **If `totalTasks` is zero:** Proceed without a task-related warning.
 
+   **Tree governance gate (only when `openspec/config.yaml` sets `tree.enabled: true`; otherwise go straight to step 4).** Run it after step 3:
+
+   a. Run `openspec validate "<name>" --json` and collect every issue that has a `code`.
+
+   b. **Restructure change** (`.openspec.yaml` has `restructure: true`): never sync or move it by hand; that would archive it without applying `restructure.yaml`. Run `openspec tree plan "<name>" --json` and show the operations, spec file writes and deletions, in-flight changes it rewrites, and redirects it appends. If `valid` is false or `conflicts` is not empty, report them and stop. Archive only when the user explicitly asked to archive this restructure: run `openspec archive "<name>" --yes --json`, show `archive.restructure`, run `openspec validate "<rewritten-change>" --strict` for each rewritten change, then skip to step 6.
+
+   c. **Normal change**, handle each code before archiving:
+   - `CHANGE_STALE_PATH`: run `openspec tree rebase "<name>" --dry-run --json`, show the moves, then run it without `--dry-run` and validate again. Rebase only moves files; requirement text is unchanged. If it reports a merged requirement, stop and tell the user which kept requirement the delta must target instead.
+   - `CHANGE_DRIFT`: the main spec changed after this change pinned its base. Show the diff from the message, merge the newer text into this change's MODIFIED block, show the edited block, and stop for approval: this changes reviewed content. After approval, accept each requirement separately with `openspec tree pin "<name>" --accept "<capability>#<requirement>"` and validate again. Never accept text you did not merge, and never accept several requirements in one step.
+   - `CHANGE_BASE_UNPINNED`: report it and ask whether the current main-spec text is the base this change was written against before running `openspec tree pin "<name>"`. Pinning at archive time would bless text that may already have drifted.
+   - `CHANGE_OVERLAP`: list the other changes. Archiving this one makes their pinned bases drift; say so, but do not edit them.
+   - `CHANGE_REMOTE_DRIFT`: report it; the branch should be rebased onto the base branch and re-checked before archiving.
+
+   d. With the gate clear, do not run the inline sync in step 4 or the manual move in step 5. Show the step 4 assessment of what will merge, then archive with `openspec archive "<name>" --yes --json` (add `--skip-specs` only if the user chose to archive without syncing). The CLI merges the deltas, refuses on drift or stale paths at the moment it writes, and moves the change with its `bases.yaml`. If it refuses, report the `status` code and message and return to c.
+
+   e. After archiving, run `openspec tree check --json --scope <domain>` for each top-level domain the change touched. If it reports `TREE_FANOUT`, `TREE_SPEC_TOO_LONG` or `TREE_REVIEW_DUE` there, suggest running the `openspec-tree-maintain` workflow for that instruction; do not start a restructure yourself.
+
 4. **Assess delta spec sync state**
 
    Use `artifactPaths.specs.existingOutputPaths` from status JSON as the only
@@ -211,6 +228,7 @@ In both branches, never create the root as a side effect: do not run `openspec i
 - Preserve .openspec.yaml when moving to archive (it moves with the directory)
 - Show clear summary of what happened
 - If sync is requested, run the `openspec-sync-specs` workflow inline (agent-driven)
+- Under tree governance (`tree.enabled: true`), archive only through `openspec archive`; never move a restructure change by hand and never `--accept` drift you did not merge
 - Never archive while a spec sync is still in flight — run the sync inline and verify the main specs before moving `changeRoot`
 - If delta specs exist, always run the sync assessment and show the combined summary before prompting
 - Apply relevant runtime context and report conflicts; operation guidance remains advisory

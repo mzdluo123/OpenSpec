@@ -24,6 +24,7 @@ import { getGlobalConfig, isGlobalConfigUnreadable } from '../core/global-config
 import { isCiEnvironment } from '../utils/ci.js';
 import { getTelemetryConfig, updateTelemetryConfig } from './config.js';
 import { isTelemetryOptedOutByEnv } from './opt-out.js';
+import { isUpstreamDistribution } from './distribution.js';
 
 // PostHog API key - public key for client-side analytics
 // This is safe to embed as it only allows sending events, not reading data
@@ -76,6 +77,11 @@ async function safeTelemetryFetch(url: string, options: RequestInit): Promise<Re
  * sync getGlobalConfig() rather than async getTelemetryConfig().
  */
 export function isTelemetryEnabled(): boolean {
+  // A redistributed fork never reports to the upstream analytics endpoint.
+  if (!isUpstreamDistribution()) {
+    return false;
+  }
+
   // Explicit opt-out, and the DO_NOT_TRACK standard. Both are read
   // tolerantly (see opt-out.ts): an opt-out that only worked for one exact
   // spelling would leave users tracked who believe they are not.

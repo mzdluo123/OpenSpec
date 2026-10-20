@@ -121,6 +121,10 @@ covered or what should change, read each relevant spec in full, including
 scenarios, with `openspec show "<spec-id>" --type spec` (same `--store` rule).
 Each capability listed here will need a corresponding spec file.
 
+Tree governance (only when `openspec/config.yaml` sets `tree.enabled: true`):
+before naming a capability, run `openspec tree context <capability-path> --json`
+and place shared facts in the parent capability instead of restating them in siblings.
+
 Every change must either declare at least one capability (new or
 modified) or explicitly opt out of specs: `openspec validate` rejects a
 change with zero deltas unless the change's `.openspec.yaml` sets
@@ -271,6 +275,14 @@ The system SHALL allow users to export their data in CSV format.
 ```
 
 Specs should be testable - each scenario is a potential test case.
+
+Tree governance (only when `openspec/config.yaml` sets `tree.enabled: true`):
+for every ADDED requirement, run `openspec tree context <capability-path> --json`,
+read the related node specs, modify or reference facts already defined elsewhere,
+and record the decision under `placement` in the change's `.openspec.yaml`
+(`requirement`, `capability` equal to the delta path, `decision`, `reviewed` with the
+target, its parent and every sibling capability, `rationale`). After writing or
+editing deltas, run `openspec tree pin <change>`.
 ````
 
 ## design.md

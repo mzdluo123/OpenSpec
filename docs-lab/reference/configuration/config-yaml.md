@@ -16,6 +16,7 @@ Each OpenSpec project keeps its config file at `openspec/config.yaml`, in the pr
 | `operations` | map: operation → guidance list | No | Advisory guidance for apply and archive work |
 | `store` | string | No | Fallback OpenSpec root when this openspec/ is config-only |
 | `references` | list | No | Stores whose specs are indexed into instructions |
+| `tree` | map | No | Tree governance limits and rule enforcement; see [Tree governance](tree-governance.md#tree) |
 
 Invalid fields never fail a command. Each field is validated on its own, and a bad value is dropped with a warning.
 

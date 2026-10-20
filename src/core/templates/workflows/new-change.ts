@@ -8,6 +8,7 @@ import type { SkillTemplate, CommandTemplate } from '../types.js';
 import { optionalWorkflow } from '../optional-workflow.js';
 import { STORE_SELECTION_GUIDANCE } from './store-selection.js';
 import { PROJECT_ROOT_GUARD } from './project-root.js';
+import { treeGovernanceGuidance } from './tree-governance.js';
 
 /**
  * Handoffs to `continue`, which is not guaranteed to be installed alongside
@@ -95,6 +96,8 @@ After completing the steps, summarize:
 - Do NOT advance beyond showing the first artifact template
 - If the name is invalid (not kebab-case), ask for a valid name
 - If a change with that name already exists, suggest continuing that change instead
+- When the specs artifact is drafted later in this change, the following tree-governance steps apply:
+${treeGovernanceGuidance('  ')}
 - Pass --schema if using a non-default workflow`,
     license: 'MIT',
     compatibility: 'Requires openspec CLI.',
@@ -173,6 +176,8 @@ After completing the steps, summarize:
 - Do NOT advance beyond showing the first artifact template
 - If the name is invalid (not kebab-case), ask for a valid name
 - If a change with that name already exists, ${EXISTING_CHANGE_HINT}
+- When the specs artifact is drafted later in this change, the following tree-governance steps apply:
+${treeGovernanceGuidance('  ')}
 - Pass --schema if using a non-default workflow`
   };
 }

@@ -84,4 +84,11 @@ After completing the steps, summarize:
 - Do NOT advance beyond showing the first artifact template
 - If the name is invalid (not kebab-case), ask for a valid name
 - If a change with that name already exists, suggest continuing that change instead
+- When the specs artifact is drafted later in this change, the following tree-governance steps apply:
+  - **Tree placement (only when `openspec/config.yaml` sets `tree.enabled: true`; otherwise skip):** before drafting the `specs` artifact, for every requirement you will ADD:
+    1. Pick a candidate capability path and run `openspec tree context <candidate> --json` to see its parent, siblings, children and in-flight changes touching them.
+    2. Read the relevant node specs fully (`openspec show <id> --type spec`).
+    3. If the fact is already defined elsewhere, MODIFY it there or reference it (capability path + requirement title) instead of restating it. If several siblings need it, place it in the parent capability.
+    4. Record the decision under `placement` in the change's `.openspec.yaml`: `{ requirement, capability, decision: existing-capability|new-capability|new-parent, reviewed: [...], rationale }`. `capability` must equal the delta path; `reviewed` must include the target capability (if it exists), its parent (if it has a spec) and every sibling.
+  - **Tree pin (only when `tree.enabled: true`):** right after writing or editing any specs delta, run `openspec tree pin "<name>"` to record base snapshots of MODIFIED/REMOVED/RENAMED targets.
 - Pass --schema if using a non-default workflow

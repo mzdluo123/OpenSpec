@@ -4,6 +4,7 @@ import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
 
 import { getStoreMetadataPath } from './store/foundation.js';
+import { parseTreeConfig, TreeConfigSchema, type TreeConfig } from './tree/config.js';
 
 export const OPERATION_IDS = ['apply', 'archive'] as const;
 export type OperationId = (typeof OPERATION_IDS)[number];
@@ -85,6 +86,10 @@ export const ProjectConfigSchema = z.object({
     })
     .optional()
     .describe('GitHub Copilot integration preferences'),
+
+  // Optional: tree governance (fork). Parsed by parseTreeConfig; absent or
+  // `enabled: false` keeps every tree hook inert.
+  tree: TreeConfigSchema.optional().describe('Tree-structured spec governance'),
 });
 
 /** Normalized in-memory shape of a referenced store declaration. */
@@ -94,8 +99,9 @@ export interface DeclarationEntry {
   remote?: string;
 }
 
-export type ProjectConfig = z.infer<typeof ProjectConfigSchema> & {
+export type ProjectConfig = Omit<z.infer<typeof ProjectConfigSchema>, 'tree'> & {
   references?: DeclarationEntry[];
+  tree?: TreeConfig;
 };
 
 export interface OperationInputs {
@@ -439,6 +445,15 @@ export function readProjectConfig(projectRoot: string): ProjectConfig | null {
         }
       } else {
         console.warn(`Invalid 'githubCopilot' field in config (must be an object)`);
+      }
+    }
+
+    if (raw.tree !== undefined) {
+      const tree = parseTreeConfig(raw.tree);
+      if (tree.config) {
+        config.tree = tree.config;
+      } else {
+        console.warn(`Invalid 'tree' field in config (${tree.error}); tree governance is disabled`);
       }
     }
 

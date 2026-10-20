@@ -43,6 +43,9 @@ import { findTaskNumberingIssues } from './task-numbering.js';
 import { findMissingTaskCheckboxIssues } from './task-checkboxes.js';
 import { findPurposePlaceholderIssue } from './purpose-placeholder.js';
 import { getPackageSchemasDir, getSchemaDir } from '../artifact-graph/index.js';
+import { collectTreeValidationIssues, isTreeRestructureChange } from '../tree/change-rules.js';
+import { isTreeIssueCode } from '../tree/config.js';
+import type { TreeContext } from '../tree/context.js';
 
 export class Validator {
   private strictMode: boolean;
@@ -167,9 +170,19 @@ export class Validator {
    */
   async validateChangeDeltaSpecs(
     changeDir: string,
-    options: { mainSpecsDir?: string; projectRoot?: string } = {}
+    options: { mainSpecsDir?: string; projectRoot?: string; treeContext?: TreeContext } = {}
   ): Promise<ValidationReport> {
     const issues: ValidationIssue[] = [];
+    // Tree governance (fork): a restructure change's MODIFIED deltas target the
+    // restructured tree, which the tree hook simulates, so the upstream
+    // main-spec comparisons below must not run against the current tree.
+    const treeOptions =
+      options.mainSpecsDir && options.projectRoot
+        ? { projectRoot: options.projectRoot, mainSpecsDir: options.mainSpecsDir, context: options.treeContext }
+        : undefined;
+    if (treeOptions && isTreeRestructureChange(changeDir, treeOptions.projectRoot)) {
+      options = { ...options, mainSpecsDir: undefined };
+    }
     const specsDir = path.join(changeDir, 'specs');
     let totalDeltas = 0;
     let hasRootLevelSpec = false;
@@ -511,6 +524,10 @@ export class Validator {
       });
     }
 
+    // Tree governance (fork): inert unless openspec/config.yaml enables it.
+    const tree = treeOptions ? await collectTreeValidationIssues(changeDir, treeOptions) : undefined;
+    if (tree) issues.push(...tree.issues);
+
     const marker = readSkipSpecsMarker(changeDir);
     if (marker.invalidReason) {
       issues.push({ level: 'ERROR', path: METADATA_FILENAME, message: this.formatInvalidMarkerMessage(marker.invalidReason) });
@@ -549,7 +566,7 @@ export class Validator {
     // The root-level and unread-file errors already name the file and the fix;
     // adding "No deltas found" on top would contradict them, since the deltas
     // are sitting in the files just reported.
-    if (totalDeltas === 0 && !hasRootLevelSpec && unreadDeltaFiles.length === 0) {
+    if (totalDeltas === 0 && !hasRootLevelSpec && unreadDeltaFiles.length === 0 && !tree?.restructure) {
       if (skipSpecs && !specsDirHasFiles) {
         issues.push({ level: 'INFO', path: 'file', message: VALIDATION_MESSAGES.CHANGE_SKIP_SPECS_ACCEPTED });
       } else if (!skipSpecs) {
@@ -1016,9 +1033,12 @@ export class Validator {
     const errors = issues.filter(i => i.level === 'ERROR').length;
     const warnings = issues.filter(i => i.level === 'WARNING').length;
     const info = issues.filter(i => i.level === 'INFO').length;
-    
-    const valid = this.strictMode 
-      ? errors === 0 && warnings === 0
+    // Tree warnings stay warnings under --strict (fork): only their configured
+    // `error` level blocks.
+    const blockingWarnings = issues.filter(i => i.level === 'WARNING' && !isTreeIssueCode(i.code)).length;
+
+    const valid = this.strictMode
+      ? errors === 0 && blockingWarnings === 0
       : errors === 0;
     
     return {

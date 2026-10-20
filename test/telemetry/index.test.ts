@@ -6,6 +6,13 @@ import * as os from 'node:os';
 import { isTelemetryEnabled, maybeShowTelemetryNotice, shutdown, trackCommand } from '../../src/telemetry/index.js';
 import { getTelemetryConfig } from '../../src/telemetry/config.js';
 
+// The suite pins upstream telemetry behaviour; the fork gate is covered in distribution.test.ts.
+vi.mock('../../src/telemetry/distribution.js', () => ({
+  UPSTREAM_PACKAGE_NAME: '@fission-ai/openspec',
+  isUpstreamDistribution: () => true,
+}));
+
+
 describe('telemetry/index', () => {
   let tempDir: string;
   let originalEnv: NodeJS.ProcessEnv;

@@ -229,6 +229,10 @@ export const WORKFLOW_PROMPT_META: Record<string, WorkflowPromptMeta> = {
     name: 'Onboard',
     description: 'Guided onboarding flow for OpenSpec',
   },
+  'tree-maintain': {
+    name: 'Tree maintain',
+    description: 'Turn one tree-maintenance instruction into a restructure change (tree governance only)',
+  },
 };
 
 

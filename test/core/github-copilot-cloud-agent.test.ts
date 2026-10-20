@@ -3,6 +3,7 @@ import os from 'os';
 import path from 'path';
 import { promises as fs } from 'fs';
 import { parse } from 'yaml';
+import { createRequire } from 'module';
 import {
   includesGitHubCopilot,
   generateCopilotSetupSteps,
@@ -89,6 +90,8 @@ When the user wants to propose a new change:
 - When archiving, ensure all tasks are completed and validated first
 `;
 
+const { name: PACKAGE_NAME } = createRequire(import.meta.url)('../../package.json') as { name: string };
+
 describe('GitHub Copilot Cloud Agent', () => {
   let tempDir: string;
 
@@ -158,7 +161,7 @@ describe('GitHub Copilot Cloud Agent', () => {
       expect(Object.keys(workflow.jobs)).toEqual(['copilot-setup-steps']);
       expect(workflow.jobs['copilot-setup-steps'].steps).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ run: 'npm install -g @fission-ai/openspec' }),
+          expect.objectContaining({ run: `npm install -g ${PACKAGE_NAME}` }),
           expect.objectContaining({ run: 'openspec --version' }),
         ])
       );
@@ -236,7 +239,7 @@ describe('GitHub Copilot Cloud Agent', () => {
       await expect(fs.readFile(setupStepsPath, 'utf8')).resolves.toBe(customSetup);
       const agentContent = await fs.readFile(agentPath, 'utf8');
       expect(agentContent).toContain('run `openspec --version`');
-      expect(agentContent).toContain('install it with `npm install -g @fission-ai/openspec`');
+      expect(agentContent).toContain(`install it with \`npm install -g ${PACKAGE_NAME}\``);
       expect(agentContent).not.toContain('pre-installed in the development environment');
     });
 
@@ -323,7 +326,7 @@ describe('GitHub Copilot Cloud Agent', () => {
       const agentPath = path.join(tempDir, COPILOT_CLOUD_FILES.agent);
       const previousAgent = generateCopilotAgentFile()
         .replace(
-          'You are a specialized agent for managing OpenSpec workflows. Before using the `openspec` CLI, run `openspec --version`. If it is unavailable, install it with `npm install -g @fission-ai/openspec`.',
+          `You are a specialized agent for managing OpenSpec workflows. Before using the \`openspec\` CLI, run \`openspec --version\`. If it is unavailable, install it with \`npm install -g ${PACKAGE_NAME}\`.`,
           'You are a specialized agent for managing OpenSpec workflows. You have access to the `openspec` CLI through shell commands, pre-installed in the development environment via `copilot-setup-steps.yml`.'
         )
         .replace(

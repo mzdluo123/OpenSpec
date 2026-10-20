@@ -23,6 +23,7 @@
 | [`openspec view`](#openspec-view) | One-screen dashboard of specs and changes. |
 | [`openspec validate`](#openspec-validate) | Check changes and specs for structural issues. |
 | [`openspec archive`](#openspec-archive) | Move a completed change to the archive and update the main specs. |
+| [`openspec tree`](configuration/tree-governance.md#commands) | Tree governance: structure checks, restructure plans, base snapshots, redirects. Off unless `tree.enabled: true`. |
 
 **Workflows and schemas**
 

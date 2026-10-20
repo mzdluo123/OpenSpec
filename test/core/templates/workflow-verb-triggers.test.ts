@@ -31,6 +31,7 @@ const NATURAL_VERB_BY_WORKFLOW: Record<string, string> = {
   verify: 'verify',
   onboard: 'onboard',
   propose: 'propose',
+  'tree-maintain': 'maintain tree',
 };
 
 /**

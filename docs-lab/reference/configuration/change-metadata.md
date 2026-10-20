@@ -17,6 +17,8 @@ Each change keeps its metadata at `openspec/changes/<change-name>/.openspec.yaml
 | `initiative` | map: `store` and `id` | No | Records the initiative this change belongs to |
 | `skip_specs` | boolean | No | Declares the change makes no spec deltas, so zero deltas validate |
 | `retire_capabilities` | boolean | No | Authorizes archive to delete a capability this change empties |
+| `placement` | list of maps | No | Where each ADDED requirement was placed; see [Tree governance](tree-governance.md#change-metadata) |
+| `restructure` | boolean | No | Marks a tree restructure change; see [Tree governance](tree-governance.md#restructureyaml) |
 
 ### schema
 

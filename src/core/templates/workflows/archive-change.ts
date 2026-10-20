@@ -6,6 +6,7 @@
  */
 import type { SkillTemplate, CommandTemplate } from '../types.js';
 import { optionalWorkflow } from '../optional-workflow.js';
+import { TREE_ARCHIVE_GATE, TREE_ARCHIVE_GUARDRAIL } from './tree-governance.js';
 import { STORE_SELECTION_GUIDANCE } from './store-selection.js';
 import { PROJECT_ROOT_GUARD } from './project-root.js';
 
@@ -121,6 +122,8 @@ ${PROJECT_ROOT_GUARD}
 
    **If \`totalTasks\` is zero:** Proceed without a task-related warning.
 
+   ${TREE_ARCHIVE_GATE}
+
 4. **Assess delta spec sync state**
 
    Use \`artifactPaths.specs.existingOutputPaths\` from status JSON as the only
@@ -225,6 +228,7 @@ ${PROJECT_ROOT_GUARD}
 - Preserve .openspec.yaml when moving to archive (it moves with the directory)
 - Show clear summary of what happened
 - If sync is requested, ${optionalWorkflow('sync', 'run the `openspec-sync-specs` workflow inline (agent-driven)', 'perform the delta-to-main-spec merge inline (agent-driven)')}
+${TREE_ARCHIVE_GUARDRAIL}
 - Never archive while a spec sync is still in flight — run the sync inline and verify the main specs before moving \`changeRoot\`
 - If delta specs exist, always run the sync assessment and show the combined summary before prompting
 - Apply relevant runtime context and report conflicts; operation guidance remains advisory
@@ -332,6 +336,8 @@ ${PROJECT_ROOT_GUARD}
    - Proceed if user confirms
 
    **If \`totalTasks\` is zero:** Proceed without a task-related warning.
+
+   ${TREE_ARCHIVE_GATE}
 
 4. **Assess delta spec sync state**
 
@@ -484,6 +490,7 @@ Target archive directory already exists.
 - Preserve .openspec.yaml when moving to archive (it moves with the directory)
 - Show clear summary of what happened
 - If sync is requested, ${SYNC_GUARDRAIL}
+${TREE_ARCHIVE_GUARDRAIL}
 - Never archive while a spec sync is still in flight — run the sync inline and verify the main specs before moving \`changeRoot\`
 - If delta specs exist, always run the sync assessment and show the combined summary before prompting
 - Apply relevant runtime context and report conflicts; operation guidance remains advisory

@@ -39,6 +39,14 @@ import {
   describeNestedChange,
   findNestedChangesIn,
 } from '../utils/nested-change.js';
+import { prepareTreeArchive, type TreeArchiveGate } from './tree/change-rules.js';
+import { treePathsFor } from './tree/context.js';
+import {
+  archiveRestructure,
+  RestructureBlockedError,
+  type FileTransactionEntry,
+  type RestructureArchiveResult,
+} from './tree/restructure.js';
 
 function isMissingPathError(error: unknown): boolean {
   return (
@@ -207,6 +215,8 @@ interface ArchiveResult {
   totals?: { added: number; modified: number; removed: number; renamed: number };
   /** Non-blocking spec-merge warnings (e.g. a REMOVED requirement that was already gone). */
   warnings?: string[];
+  /** Tree governance (fork): what archiving a restructure change did. */
+  restructure?: RestructureArchiveResult;
 }
 
 /**
@@ -1072,7 +1082,7 @@ async function deepestExistingAncestor(dir: string, boundaryDir: string): Promis
 }
 
 async function captureSpecSnapshots(
-  mutations: SpecMutation[],
+  mutations: Array<Pick<SpecMutation, 'outcome' | 'rebuilt'> & { update: Pick<SpecUpdate, 'target'> }>,
   mainSpecsDir: string
 ): Promise<SpecSnapshot[]> {
   return Promise.all(
@@ -1260,6 +1270,30 @@ async function restoreSpecSnapshots(
   if (errors.length > 0) {
     throw new Error(errors.map(({ message }) => message).join(' '));
   }
+}
+
+/**
+ * Tree governance (fork): snapshot arbitrary files through the spec snapshot
+ * machinery, so a restructure rolls back exactly like a spec merge. `write`
+ * entries carry the bytes that will be written; `retire` entries are files
+ * that will be deleted.
+ */
+async function captureFileSnapshots(
+  entries: FileTransactionEntry[],
+  boundaryDir: string
+): Promise<SpecSnapshot[]> {
+  const snapshots = await captureSpecSnapshots(
+    entries.map((entry) => ({
+      update: { target: entry.target },
+      outcome: entry.outcome,
+      rebuilt: '',
+    })),
+    boundaryDir
+  );
+  snapshots.forEach((snapshot, index) => {
+    if (entries[index].outcome === 'write') snapshot.expectedContent = entries[index].content;
+  });
+  return snapshots;
 }
 
 async function finalizeRetirementBackups(
@@ -1679,7 +1713,22 @@ export class ArchiveCommand {
     const claimPath = archiveClaimPath(archivePath, archiveName);
     let archiveClaim: ArchiveClaim | undefined;
 
+    // Tree governance (fork): refuse drifted or stale normal changes; route
+    // restructure changes through their manifest. Inert when tree is off.
+    const treeGate = isStoreSelectedRoot(root)
+      ? undefined
+      : await prepareTreeArchive(treePathsFor(root), changeName, { skipSpecs: !!options.skipSpecs });
+    if (treeGate?.kind === 'blocked') {
+      throw new ArchiveBlockedError(treeGate.code, treeGate.message, treeGate.fix);
+    }
+
     try {
+      if (treeGate?.kind === 'restructure') {
+        return await this.archiveRestructureChange(treeGate, {
+          root, changeName, options, json, archiveName, archivePath, mainSpecsDir, unknownMetadataWarning,
+          onClaim: (claim) => { archiveClaim = claim; },
+        });
+      }
       // Handle spec updates unless skipSpecs flag is set
       let specsUpdated = false;
       let totals: ArchiveResult['totals'];
@@ -2346,6 +2395,78 @@ export class ArchiveCommand {
     } finally {
       if (archiveClaim) await releaseArchiveClaim(archiveClaim, claimPath).catch(() => undefined);
     }
+  }
+
+  /**
+   * Tree governance (fork): archive a restructure change by applying its
+   * manifest instead of merging deltas. Rollback reuses the spec snapshots.
+   */
+  private async archiveRestructureChange(
+    gate: Extract<TreeArchiveGate, { kind: 'restructure' }>,
+    ctx: {
+      root: ResolvedOpenSpecRoot;
+      changeName: string;
+      options: ArchiveOptions;
+      json: boolean;
+      archiveName: string;
+      archivePath: string;
+      mainSpecsDir: string;
+      unknownMetadataWarning: string | undefined;
+      onClaim: (claim: ArchiveClaim) => void;
+    }
+  ): Promise<ArchiveResult | null> {
+    const { root, changeName, options, json, archiveName, archivePath } = ctx;
+    if (options.skipSpecs) {
+      throw new ArchiveBlockedError(
+        'restructure_skip_specs',
+        `'${changeName}' is a restructure change; --skip-specs would archive it without applying restructure.yaml.`
+      );
+    }
+    if (!options.yes) {
+      const summary = `Apply restructure '${changeName}' (${gate.plan.specOperations.length} spec file operation(s), ${gate.plan.inflight.rewrites.length} in-flight change(s) rewritten)?`;
+      if (json) {
+        throw new ArchiveBlockedError('archive_confirmation_required', `${summary} Rerun with --yes.`, withStoreFlag(root, `openspec archive ${changeName} --json --yes`));
+      }
+      const proceed = await confirmOrBlock({ message: summary, default: false }, () =>
+        new ArchiveBlockedError('archive_confirmation_required', 'Applying a restructure requires confirmation.', rerunCommand(root, changeName, options))
+      );
+      if (!proceed) {
+        console.log('Archive cancelled.');
+        return null;
+      }
+    }
+    await assertArchiveDestinationAvailable(archivePath, archiveName);
+    ctx.onClaim(await claimArchiveDestination(archivePath, archiveName));
+    let restructure: RestructureArchiveResult;
+    try {
+      restructure = await archiveRestructure(gate.context, gate.plan, archiveName, archivePath, {
+        captureSnapshots: captureFileSnapshots,
+        restoreSnapshots: restoreSpecSnapshots,
+        moveDirectory: (from, to) => moveDirectory(from, to),
+        countChangeErrors: async (dir) =>
+          (await new Validator().validateChangeDeltaSpecs(dir, { mainSpecsDir: ctx.mainSpecsDir, projectRoot: root.path })).summary.errors,
+      });
+    } catch (error) {
+      if (error instanceof RestructureBlockedError) {
+        throw new ArchiveBlockedError(error.code, error.message, error.fix);
+      }
+      throw error;
+    }
+    if (!json) {
+      console.log(
+        `Restructure applied: ${restructure.operations} operation(s), ${restructure.fileOperations} file operation(s), ` +
+          `${restructure.rewrittenChanges.length} in-flight change(s) rewritten, ${restructure.redirectsAppended} redirect(s) appended.`
+      );
+      console.log(`Change '${changeName}' archived as '${archiveName}'.`);
+    }
+    return {
+      change: changeName,
+      archivedAs: archiveName,
+      path: archivePath,
+      specsUpdated: gate.plan.specOperations.length > 0,
+      restructure,
+      ...(ctx.unknownMetadataWarning ? { warnings: [ctx.unknownMetadataWarning] } : {}),
+    };
   }
 
   private async selectChange(

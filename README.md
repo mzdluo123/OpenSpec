@@ -1,3 +1,6 @@
+> [!NOTE]
+> **`@rainchan/openspec` is a fork of [`@fission-ai/openspec`](https://github.com/Fission-AI/OpenSpec)** that adds tree-structured spec governance (`openspec tree …`, restructure changes, base snapshots and drift checks). Without a `tree:` section in `openspec/config.yaml` it behaves exactly like upstream. Install with `npm install -g @rainchan/openspec`; the command is still `openspec`. Usage telemetry is disabled in this build. Reference: [docs-lab/reference/configuration/tree-governance.md](docs-lab/reference/configuration/tree-governance.md).
+
 <p align="center">
   <a href="https://github.com/Fission-AI/OpenSpec">
     <picture>

@@ -6,6 +6,8 @@ export interface ValidationIssue {
   message: string;
   line?: number;
   column?: number;
+  /** Rule code for issues raised by tree governance hooks (fork). */
+  code?: string;
 }
 
 export interface ValidationReport {

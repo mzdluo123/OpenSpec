@@ -23,6 +23,8 @@ import { promises as fs } from 'fs';
 import { getTaskProgressDetailForChange, type SchemaGlobCache } from '../utils/task-progress.js';
 import { FileSystemUtils } from '../utils/file-system.js';
 import { folderStyleNameProblem } from '../core/id.js';
+import { loadTreeContext, treePathsFor } from '../core/tree/context.js';
+import { structuralFindings } from '../core/tree/migrate.js';
 
 type ItemType = 'change' | 'spec';
 
@@ -451,6 +453,8 @@ export class ValidateCommand {
     const maxSuggestions = 5; // used by nearestMatches
     const concurrency = normalizeConcurrency(opts.concurrency) ?? normalizeConcurrency(process.env.OPENSPEC_CONCURRENCY) ?? DEFAULT_CONCURRENCY;
     const validator = new Validator(opts.strict);
+    // Tree governance (fork): one shared context for every change in this run.
+    const treeContext = isStoreSelectedRoot(root) ? undefined : loadTreeContext(treePathsFor(root));
     const queue: Array<() => Promise<BulkItemResult>> = [];
 
     for (const id of changeIds) {
@@ -470,6 +474,7 @@ export class ValidateCommand {
         const report = await validator.validateChangeDeltaSpecs(changeDir, {
           mainSpecsDir: root.specsDir,
           projectRoot: root.path,
+          treeContext,
         });
         const durationMs = Date.now() - start;
         return { id, type: 'change' as const, valid: report.valid, issues: report.issues, durationMs };
@@ -554,10 +559,14 @@ export class ValidateCommand {
       },
     } as const;
 
+    // Tree governance (fork): structural findings ride along with --all / --specs.
+    const treeFindings = treeContext && scope.specs && !opts.findingsScope ? await structuralFindings(treeContext) : [];
+    const treeErrors = treeFindings.filter((finding) => finding.level === 'error').length;
+
     if (opts.findingsScope) {
       this.printFindingsReport({ items: results, summary, root: toRootOutput(root) }, opts.findingsScope, opts.json, root);
     } else if (opts.json) {
-      const out = { items: results, summary, version: '1.0', root: toRootOutput(root) };
+      const out = { items: results, summary, ...(treeContext && scope.specs ? { tree: { findings: treeFindings } } : {}), version: '1.0', root: toRootOutput(root) };
       console.log(JSON.stringify(out, null, 2));
     } else {
       for (const res of results) {
@@ -568,11 +577,15 @@ export class ValidateCommand {
           console.error(`  ${prefix} [${issue.level}] ${issue.path}: ${issue.message}`);
         }
       }
+      for (const finding of treeFindings) {
+        const prefix = finding.level === 'error' ? '✗' : finding.level === 'warning' ? '⚠' : 'ℹ';
+        console.error(`${prefix} tree [${finding.code}] ${finding.message}`);
+      }
       console.log(`Totals: ${summary.totals.passed} passed, ${summary.totals.failed} failed (${summary.totals.items} items)`);
       this.printBulkDetails(results, root);
     }
 
-    process.exitCode = failed > 0 ? 1 : 0;
+    process.exitCode = failed > 0 || treeErrors > 0 ? 1 : 0;
   }
 
   /**

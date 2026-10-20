@@ -8,6 +8,7 @@ import type { SkillTemplate, CommandTemplate } from '../types.js';
 import { optionalWorkflow } from '../optional-workflow.js';
 import { STORE_SELECTION_GUIDANCE } from './store-selection.js';
 import { PROJECT_ROOT_GUARD } from './project-root.js';
+import { treeGovernanceGuidance } from './tree-governance.js';
 
 /**
  * The implementation handoff. `apply` is not guaranteed to be installed, so
@@ -141,6 +142,7 @@ ${PROJECT_ROOT_GUARD}
       - If the \`instruction\` field delegates creation to a specific skill or command, invoke it only if it can write the artifact to that output path; otherwise stop and tell the user. Then verify the artifact file exists at that output path
       - Otherwise create the artifact file using \`template\` as the structure and write it to that output path
       - Apply \`context\` and \`rules\` as constraints - but do NOT copy them into the file
+${treeGovernanceGuidance('      ')}
       - Show brief progress: "Created <artifact-id>"
 
    b. **Continue until every artifact in the required set exists (not just \`apply.requires\`)**
@@ -307,6 +309,7 @@ ${PROJECT_ROOT_GUARD}
       - If the \`instruction\` field delegates creation to a specific skill or command, invoke it only if it can write the artifact to that output path; otherwise stop and tell the user. Then verify the artifact file exists at that output path
       - Otherwise create the artifact file using \`template\` as the structure and write it to that output path
       - Apply \`context\` and \`rules\` as constraints - but do NOT copy them into the file
+${treeGovernanceGuidance('      ')}
       - Show brief progress: "Created <artifact-id>"
 
    b. **Continue until every artifact in the required set exists (not just \`apply.requires\`)**

@@ -94,6 +94,12 @@ In both branches, never create the root as a side effect: do not run `openspec i
      - Otherwise, write it yourself:
        - Use `template` as the structure - fill in its sections
        - Apply `context` and `rules` as constraints when writing - but do NOT copy them into the file
+       - **Tree placement (only when `openspec/config.yaml` sets `tree.enabled: true`; otherwise skip):** before drafting the `specs` artifact, for every requirement you will ADD:
+         1. Pick a candidate capability path and run `openspec tree context <candidate> --json` to see its parent, siblings, children and in-flight changes touching them.
+         2. Read the relevant node specs fully (`openspec show <id> --type spec`).
+         3. If the fact is already defined elsewhere, MODIFY it there or reference it (capability path + requirement title) instead of restating it. If several siblings need it, place it in the parent capability.
+         4. Record the decision under `placement` in the change's `.openspec.yaml`: `{ requirement, capability, decision: existing-capability|new-capability|new-parent, reviewed: [...], rationale }`. `capability` must equal the delta path; `reviewed` must include the target capability (if it exists), its parent (if it has a spec) and every sibling.
+       - **Tree pin (only when `tree.enabled: true`):** right after writing or editing any specs delta, run `openspec tree pin "<name>"` to record base snapshots of MODIFIED/REMOVED/RENAMED targets.
        - Write the file to that output path
      - Either way, verify the artifact file exists at that output path
    - Show what was created and what's now unlocked
