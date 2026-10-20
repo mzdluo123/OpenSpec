@@ -8,6 +8,7 @@ import { isInteractive } from '../utils/interactive.js';
 import { getSpecIds } from '../utils/item-discovery.js';
 import { discoverSpecFiles } from '../utils/spec-discovery.js';
 import { assertDiscoveredSpecFile } from '../utils/spec-path-containment.js';
+import { readEnabledTreeConfig } from '../core/tree/context.js';
 
 const SPECS_DIR = 'openspec/specs';
 
@@ -229,7 +230,12 @@ export async function specValidateCommand(
       throw new Error(`Spec '${specId}' not found at openspec/specs/${specId}/spec.md`);
     }
 
-    const validator = new Validator(options.strict);
+    // `openspec spec validate` is cwd-relative (SPECS_DIR), so the tree config is too.
+    const treeConfig = readEnabledTreeConfig(process.cwd());
+    const validator = new Validator(
+      options.strict,
+      treeConfig ? { maxRequirementTextLength: treeConfig.maxRequirementTextLength } : {}
+    );
     assertSpecPath(SPECS_DIR, specPath);
     const report = await validator.validateSpec(specPath);
 

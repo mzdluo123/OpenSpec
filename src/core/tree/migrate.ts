@@ -87,6 +87,7 @@ export async function migrateInit(
     minSpecLines: 60,
     minRequirements: 3,
     mergeBelowLines: 80,
+    maxRequirementTextLength: 500,
     maxDepth: 4,
     reviewAfterArchives: 10,
     scope: [],

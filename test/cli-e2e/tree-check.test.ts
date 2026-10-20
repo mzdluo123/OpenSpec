@@ -94,4 +94,22 @@ describe('tree check and migration commands', () => {
     const again = JSON.parse((await cli('tree', 'migrate', 'import-redirects', '--from-git', `${first}..HEAD`, '--yes', '--json')).stdout);
     expect(again).toMatchObject({ found: [], written: 0 });
   });
+
+  it('applies tree.maxRequirementTextLength to the long-requirement warning', async () => {
+    const long = `The system SHALL ${'keep every reviewed clause '.repeat(25)}.`;
+    project = await createTreeProject({
+      tree: false,
+      specs: { review: spec('review', [{ name: 'Long rule', text: long }]) },
+    });
+    const strict = async () => JSON.parse((await cli('validate', 'review', '--type', 'spec', '--strict', '--json')).stdout).items[0];
+    const upstream = await strict();
+    expect(upstream.valid).toBe(false);
+    expect(upstream.issues).toContainEqual(expect.objectContaining({ message: expect.stringContaining('>500 characters') }));
+
+    await project.write('openspec/config.yaml', 'schema: spec-driven\ntree:\n  enabled: true\n  maxRequirementTextLength: 1000\n');
+    expect((await strict()).valid).toBe(true);
+
+    await project.write('openspec/config.yaml', 'schema: spec-driven\ntree:\n  enabled: true\n  maxRequirementTextLength: 600\n');
+    expect((await strict()).issues).toContainEqual(expect.objectContaining({ message: expect.stringContaining('>600 characters') }));
+  });
 });

@@ -21,6 +21,7 @@ import {
   foldRequirementName,
   parseDeltaSpec,
 } from '../core/parsers/requirement-blocks.js';
+import { readEnabledTreeConfig } from '../core/tree/context.js';
 import {
   extractRequirementBlock,
   diffRequirementBlock,
@@ -542,7 +543,11 @@ export class ChangeCommand {
       throw new Error(`Change "${changeName}" not found at ${changeDir}`);
     }
     
-    const validator = new Validator(options?.strict || false);
+    const treeConfig = readEnabledTreeConfig(this.rootPath ?? process.cwd());
+    const validator = new Validator(
+      options?.strict || false,
+      treeConfig ? { maxRequirementTextLength: treeConfig.maxRequirementTextLength } : {}
+    );
     const report = await validator.validateChangeDeltaSpecs(changeDir, {
       // Derived from changesPath so the main specs come from the same root the
       // change itself was resolved against.

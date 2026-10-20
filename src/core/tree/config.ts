@@ -72,6 +72,8 @@ export const TreeConfigSchema = z
     minSpecLines: z.number().int().positive().default(60),
     minRequirements: z.number().int().positive().default(3),
     mergeBelowLines: z.number().int().nonnegative().default(80),
+    /** Characters a requirement statement may have before validation warns (upstream: 500). */
+    maxRequirementTextLength: z.number().int().positive().default(500),
     maxDepth: z.number().int().positive().default(4),
     reviewAfterArchives: z.number().int().positive().default(10),
     maxOpenChanges: z.number().int().nonnegative().optional(),
@@ -108,6 +110,7 @@ export interface TreeConfig {
   minSpecLines: number;
   minRequirements: number;
   mergeBelowLines: number;
+  maxRequirementTextLength: number;
   maxDepth: number;
   reviewAfterArchives: number;
   maxOpenChanges?: number;
@@ -140,6 +143,7 @@ export function parseTreeConfig(raw: unknown): { config?: TreeConfig; error?: st
       minSpecLines: data.minSpecLines,
       minRequirements: data.minRequirements,
       mergeBelowLines: data.mergeBelowLines,
+      maxRequirementTextLength: data.maxRequirementTextLength,
       maxDepth: data.maxDepth,
       reviewAfterArchives: data.reviewAfterArchives,
       ...(data.maxOpenChanges !== undefined ? { maxOpenChanges: data.maxOpenChanges } : {}),

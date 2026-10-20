@@ -23,6 +23,7 @@ Tree governance treats `openspec/specs/` as a tree: one fact lives in one capabi
 | `minSpecLines` | integer | `60` | Floor for a capability a restructure creates or shrinks; it must reach this many lines or `minRequirements` (`RESTRUCTURE_TOO_GRANULAR`). Must be at most half of `maxSpecLines` |
 | `minRequirements` | integer | `3` | Requirement-count side of the same floor. Must be at most half of `maxRequirements` |
 | `mergeBelowLines` | integer | `80` | A spec shorter than this with sibling capabilities is a merge candidate (`TREE_SPEC_TOO_SHORT`) |
+| `maxRequirementTextLength` | integer | `500` | Characters a requirement statement may have before validation warns. The upstream limit is 500; raise it to adopt existing long requirements, then lower it as they are rewritten |
 | `maxDepth` | integer | `4` | Directory depth below `specs/` (`TREE_DEPTH`) |
 | `reviewAfterArchives` | integer | `10` | Archives touching a subtree since its last review before `TREE_REVIEW_DUE` |
 | `maxOpenChanges` | integer | none | In-flight change limit that `tree migrate status` checks in phase 1 |

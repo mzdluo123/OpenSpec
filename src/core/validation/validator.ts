@@ -49,9 +49,20 @@ import type { TreeContext } from '../tree/context.js';
 
 export class Validator {
   private strictMode: boolean;
+  private maxRequirementTextLength: number;
+  private requirementTooLongMessage: string;
 
-  constructor(strictMode: boolean = false) {
+  /**
+   * `maxRequirementTextLength` comes from `tree.maxRequirementTextLength`
+   * (fork); without it the upstream limit applies.
+   */
+  constructor(strictMode: boolean = false, options: { maxRequirementTextLength?: number } = {}) {
     this.strictMode = strictMode;
+    this.maxRequirementTextLength = options.maxRequirementTextLength ?? MAX_REQUIREMENT_TEXT_LENGTH;
+    this.requirementTooLongMessage = VALIDATION_MESSAGES.REQUIREMENT_TOO_LONG.replace(
+      `>${MAX_REQUIREMENT_TEXT_LENGTH} characters`,
+      `>${this.maxRequirementTextLength} characters`
+    );
   }
 
   async validateSpec(filePath: string): Promise<ValidationReport> {
@@ -334,11 +345,11 @@ export class Validator {
           // `validate <change> --strict` catches a new overlong requirement
           // before it lands. MODIFIED is left alone: its text is the existing
           // requirement, which the specs instruction says to keep whole.
-          if (requirementText && requirementText.length > MAX_REQUIREMENT_TEXT_LENGTH) {
+          if (requirementText && requirementText.length > this.maxRequirementTextLength) {
             issues.push({
               level: 'WARNING',
               path: entryPath,
-              message: `ADDED "${block.name}": ${VALIDATION_MESSAGES.REQUIREMENT_TOO_LONG}`,
+              message: `ADDED "${block.name}": ${this.requirementTooLongMessage}`,
             });
           }
           const scenarioCount = this.countScenarios(block.raw);
@@ -858,11 +869,11 @@ export class Validator {
     }
     
     spec.requirements.forEach((req, index) => {
-      if (req.text.length > MAX_REQUIREMENT_TEXT_LENGTH) {
+      if (req.text.length > this.maxRequirementTextLength) {
         issues.push({
           level: 'WARNING',
           path: `requirements[${index}]`,
-          message: VALIDATION_MESSAGES.REQUIREMENT_TOO_LONG,
+          message: this.requirementTooLongMessage,
         });
       }
 

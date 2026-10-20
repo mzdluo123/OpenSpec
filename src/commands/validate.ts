@@ -23,8 +23,14 @@ import { promises as fs } from 'fs';
 import { getTaskProgressDetailForChange, type SchemaGlobCache } from '../utils/task-progress.js';
 import { FileSystemUtils } from '../utils/file-system.js';
 import { folderStyleNameProblem } from '../core/id.js';
-import { loadTreeContext, treePathsFor } from '../core/tree/context.js';
+import { loadTreeContext, readEnabledTreeConfig, treePathsFor } from '../core/tree/context.js';
 import { structuralFindings } from '../core/tree/migrate.js';
+
+/** Fork: `tree.maxRequirementTextLength` overrides the upstream long-requirement threshold. */
+function validatorOptions(root: ResolvedOpenSpecRoot): { maxRequirementTextLength?: number } {
+  const tree = isStoreSelectedRoot(root) ? undefined : readEnabledTreeConfig(root.path);
+  return tree ? { maxRequirementTextLength: tree.maxRequirementTextLength } : {};
+}
 
 type ItemType = 'change' | 'spec';
 
@@ -326,7 +332,7 @@ export class ValidateCommand {
       process.exitCode = 1;
       return;
     }
-    const validator = new Validator(opts.strict);
+    const validator = new Validator(opts.strict, validatorOptions(root));
     if (type === 'change') {
       const changeDir = path.join(root.changesDir, id);
       const start = Date.now();
@@ -452,7 +458,7 @@ export class ValidateCommand {
     const DEFAULT_CONCURRENCY = 6;
     const maxSuggestions = 5; // used by nearestMatches
     const concurrency = normalizeConcurrency(opts.concurrency) ?? normalizeConcurrency(process.env.OPENSPEC_CONCURRENCY) ?? DEFAULT_CONCURRENCY;
-    const validator = new Validator(opts.strict);
+    const validator = new Validator(opts.strict, validatorOptions(root));
     // Tree governance (fork): one shared context for every change in this run.
     const treeContext = isStoreSelectedRoot(root) ? undefined : loadTreeContext(treePathsFor(root));
     const queue: Array<() => Promise<BulkItemResult>> = [];
